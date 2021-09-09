@@ -27,6 +27,13 @@ let averageThreshold = 10
 let percentageAverageCount = 5
 
 
+// Thickness of the line in the graph
+let lineThickness = 4
+
+
+let createSurveyCountHeader = true
+
+
 /***********************
 Start of the Script
 ***********************/
@@ -120,7 +127,6 @@ async function createWidget()
 	const githubWidget = bg.addText('Github');
 	githubWidget.url = 'https://github.com/BastianLo/IOS_Widget_Wahlumfragen'
 	githubWidget.rightAlignText()
-	githubWidget
 	githubWidget.font = Font.mediumRoundedSystemFont(6);
 
 
@@ -130,8 +136,9 @@ async function createWidget()
 	let data = await getData()
 
 	let points = createPoints(data)
-	drawAxis()
-	drawGraphLine(points, 3)
+	drawAxis()    
+    if(createSurveyCountHeader){getTodaysSurveys(points)}
+	drawGraphLine(points, lineThickness)
 	createPercentageHeader(points)
 
 	let img = c.getImage()
@@ -142,9 +149,27 @@ async function createWidget()
 	w.backgroundImage = img
 }
 
+function getTodaysSurveys(points)
+{
+    let arr = points["dates"][2]
+    let countToday = arr.filter(obj => {
+      var dArr = obj.split("-")
+var date = new Date(dArr[0], dArr[1] - 1, dArr[2])
+    return (date.getDate()==new Date(Date.now()).getDate()) &&(date.getMonth()==new Date(Date.now()).getMonth()) &&(date.getYear()==new Date(Date.now()).getYear()) }).length
+    let countYesterday = arr.filter(obj => {
+      var dArr = obj.split("-")
+var date = new Date(dArr[0], dArr[1] - 1, dArr[2])
+    return (date.getDate()==new Date(Date.now()).getDate()-1) &&(date.getMonth()==new Date(Date.now()).getMonth()) &&(date.getYear()==new Date(Date.now()).getYear()) }).length
+    
+    c.setTextColor(Color.white())
+    c.setFont(Font.mediumSystemFont(15))
+    c.drawText("Umfragen      Heute: "+countToday.toString()+ "     Gestern: "+countYesterday.toString(), new Point(xborder+170, 0))
+  
+}
+
 function createPercentageHeader(data)
 {
-	c.setFont(Font.mediumSystemFont(25));
+	c.setFont(Font.mediumSystemFont(25))
 
 	x = 0
 	y = 20
@@ -172,8 +197,8 @@ function drawAxis()
 	drawLine(new Point(xborder, height - bottomMargin), new Point(width - xborder, height - bottomMargin), 2, axiscolor)
 	drawLine(new Point(xborder, height - bottomMargin), new Point(xborder, height - bottomMargin - gheight), 2, axiscolor)
 
-	c.setTextColor(Color.white());
-	c.setFont(Font.mediumSystemFont(15));
+	c.setTextColor(Color.white())
+	c.setFont(Font.mediumSystemFont(15))
 
 
 	let legendpoints = visiblePercentage / 10
@@ -243,8 +268,8 @@ function createPoints(data)
 	visiblePercentage = sharemax + 2
 
 	points = {
-		"share":
-		{}
+		"share":{},  
+        "dates":{}
 	}
 	for (var i = 0; i < data.length; i++)
 	{
@@ -256,7 +281,8 @@ function createPoints(data)
 			{
 
 				points[res] = []
-				points["share"][res] = []
+				points["share"][res] = []  
+                points["dates"][res] = []
 			}
 			let share = data[i]["Results"][res]
 			let y = height - bottomMargin - share * gheight / 100 * (100 / visiblePercentage)
@@ -267,6 +293,7 @@ function createPoints(data)
 			{
 				let diff = x - points[res][points[res].length - 1][0]
 				points["share"][res].push(share)
+                points["dates"][res].push(data[i]["Date"])
 				if (diff < averageThreshold)
 				{
 					points[res][points[res].length - 1][2] = share
@@ -321,7 +348,7 @@ function drawGraphLine(points, width = 3)
 		for (var i = 0; i < points[party].length - 1; i++)
 		{
 
-			drawLine(new Point(points[party][i][0], points[party][i][1]), new Point(points[party][i + 1][0], points[party][i + 1][1]), 3, parties[party]["color"])
+			drawLine(new Point(points[party][i][0], points[party][i][1]), new Point(points[party][i + 1][0], points[party][i + 1][1]), width, parties[party]["color"])
 		}
 	}
 
@@ -337,3 +364,4 @@ function drawLine(point1, point2, width, color)
 	c.setLineWidth(width);
 	c.strokePath();
 }
+
